@@ -35,7 +35,7 @@ Some websites ignore normal paste actions or depend on keyboard/input events to 
 ## Trigger Options
 
 - Context menu: **Paste as Typing**
-- Keyboard shortcut: **Ctrl+Shift+P** (Windows/Linux), **Command+Shift+P** (macOS)
+- Keyboard shortcut: **Ctrl+Shift+V** (Windows/Linux), **Command+Shift+V** (macOS)
 - Toolbar action: click the extension icon
 
 ## Install
@@ -61,7 +61,7 @@ https://chromewebstore.google.com/detail/smart-paste-typing/ochdhjlkcfnockclnacb
 ## Shortcut Notes
 
 - `Ctrl+P` / `Command+P` is usually reserved by Chrome for Print
-- Default shortcut is `Ctrl+Shift+P` / `Command+Shift+P`
+- Default shortcut is `Ctrl+Shift+V` / `Command+Shift+V`
 - You can customize shortcuts at `chrome://extensions/shortcuts`
 
 ## Troubleshooting
