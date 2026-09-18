@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Smart Paste Typing — Brag</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --bg: #0b0d10;
+        --surface: #15181d;
+        --surface-border: rgba(255, 255, 255, 0.08);
+        --text: #edeef0;
+        --text-dim: #9aa1ab;
+        --text-faint: #7e8490;
+        --accent: #7c9cff;
+        --accent-deep: #6366f1;
+        --accent-glow: #a78bfa;
+        --font-body: -apple-system, "Inter", system-ui, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+      }
+
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+      }
+
+      /* z-index above sub-composition mounts (root-level siblings placed
+         later in the DOM): scene sections must paint their own overlay
+         content above the mounted sub-composition's opaque background even
+         though the mounts appear later in source order. */
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        z-index: 2;
+      }
+
+      .scene-bg {
+        position: absolute;
+        inset: 0;
+        background: var(--bg);
+      }
+
+      .scene-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* ============ shared mock browser chrome ============ */
+      .mockwin {
+        border-radius: 16px;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.65);
+        overflow: hidden;
+      }
+
+      .win-titlebar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--surface-border);
+        background: rgba(255, 255, 255, 0.015);
+      }
+
+      .win-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+      }
+      .win-dot.red {
+        background: #ff5f57;
+      }
+      .win-dot.yellow {
+        background: #febc2e;
+      }
+      .win-dot.green {
+        background: #28c840;
+      }
+      .win-titlebar .win-label {
+        margin-left: 8px;
+        font-size: 13px;
+        color: var(--text-faint);
+      }
+      .win-titlebar .win-addr {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+      }
+
+      /* ============ SCENE 1: the problem ============ */
+      #scene1-mockwin {
+        width: 640px;
+        will-change: transform;
+      }
+
+      .s1-body {
+        padding: 32px 30px 34px;
+      }
+
+      .s1-field-label {
+        display: block;
+        font-size: 13px;
+        color: var(--text-faint);
+        margin-bottom: 10px;
+      }
+
+      #scene1-field {
+        background: #111418;
+        border: 1px solid var(--surface-border);
+        border-radius: 10px;
+        padding: 16px 18px;
+        font-size: 16px;
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        color: var(--text-dim);
+        position: relative;
+      }
+
+      #scene1-field.blocked {
+        border-color: rgba(248, 113, 113, 0.55);
+      }
+
+      #scene1-blocked-tag {
+        position: absolute;
+        right: -14px;
+        top: 50%;
+        transform: translate(100%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(248, 113, 113, 0.12);
+        border: 1px solid rgba(248, 113, 113, 0.32);
+        color: #f87171;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      #scene1-cursor {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        pointer-events: none;
+        will-change: transform, opacity;
+      }
+      #scene1-cursor svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+      }
+
+      #scene1-line {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 25px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      #scene1-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* ============ SCENE 2: the solution ============ */
+      #scene2-toolbar {
+        position: absolute;
+        top: 118px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 760px;
+        height: 56px;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        padding: 0 18px;
+        gap: 14px;
+        box-shadow: 0 20px 50px -24px rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+      .s2-tb-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--text-faint);
+        opacity: 0.5;
+      }
+      .s2-tb-addr {
+        flex: 1;
+        height: 30px;
+        border-radius: 8px;
+        background: #111418;
+        border: 1px solid var(--surface-border);
+      }
+      #scene2-icon-well {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #scene2-icon-well img {
+        width: 26px;
+        height: 26px;
+        display: block;
+        border-radius: 6px;
+      }
+      #scene2-icon-ring {
+        position: absolute;
+        inset: -6px;
+        border-radius: 14px;
+        border: 2px solid var(--accent);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      #scene2-overlay {
+        position: absolute;
+        left: 50%;
+        top: 260px;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      .s2-shortcut-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .s2-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        font-family: var(--font-mono);
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--text);
+      }
+      .s2-plat-label {
+        font-size: 13px;
+        color: var(--text-faint);
+        text-align: center;
+      }
+
+      #scene2-name-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        box-shadow: 0 16px 40px -18px rgba(124, 156, 255, 0.4);
+      }
+      #scene2-name-card img {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: block;
+      }
+      #scene2-name-text {
+        font-size: 19px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        color: var(--text);
+      }
+
+      /* ============ SCENE 3: magic typing ============ */
+      #scene3-card {
+        width: 760px;
+        will-change: transform, opacity;
+      }
+
+      .s3-body {
+        padding: 38px 36px 40px;
+      }
+
+      .s3-field-label {
+        display: block;
+        font-size: 14px;
+        color: var(--text-faint);
+        margin-bottom: 12px;
+      }
+
+      #scene3-field {
+        background: #111418;
+        border: 1px solid var(--surface-border);
+        border-radius: 12px;
+        padding: 22px 24px;
+        font-size: 20px;
+        min-height: 70px;
+        display: flex;
+        align-items: center;
+        color: var(--text);
+        font-family: var(--font-mono);
+        letter-spacing: 0.02em;
+      }
+
+      #scene3-caret {
+        display: inline-block;
+        width: 3px;
+        height: 1.15em;
+        background: var(--accent);
+        margin-left: 2px;
+        vertical-align: text-bottom;
+        will-change: opacity;
+      }
+
+      #scene3-label {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--accent);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      /* ============ SCENE 5: outro (composed alongside logo mount) ============ */
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-root" id="root" data-composition-id="main" data-width="1920" data-height="1080" data-duration="25" data-fps="30">
+      <!-- ============================================================ -->
+      <!-- SCENE 1 — The problem (0s - 5s)                                -->
+      <!-- ============================================================ -->
+      <section data-hf-id="hf-s1" id="scene-1" class="clip" data-start="0" data-duration="5" data-track-index="2">
+        <div data-hf-id="hf-s1bg" class="scene-bg"></div>
+        <div data-hf-id="hf-s1in" class="scene-inner">
+          <div data-hf-id="hf-s1stack" id="scene1-stack">
+            <div data-hf-id="hf-s1win" id="scene1-mockwin" class="mockwin">
+              <div data-hf-id="hf-s1tb" class="win-titlebar">
+                <span data-hf-id="hf-s1d1" class="win-dot red"></span>
+                <span data-hf-id="hf-s1d2" class="win-dot yellow"></span>
+                <span data-hf-id="hf-s1d3" class="win-dot green"></span>
+                <span data-hf-id="hf-s1lbl" class="win-label">account-portal.app</span>
+                <span data-hf-id="hf-s1addr" class="win-addr">https://account-portal.app/sign-in</span>
+              </div>
+              <div data-hf-id="hf-s1body" class="s1-body">
+                <span data-hf-id="hf-s1fl" class="s1-field-label">Password</span>
+                <div data-hf-id="hf-s1field" id="scene1-field">
+                  <span data-hf-id="hf-s1ph">••••••••••••••••</span>
+                  <span data-hf-id="hf-s1tag" id="scene1-blocked-tag" aria-hidden="true">Paste blocked.</span>
+                  <span data-hf-id="hf-s1cur" id="scene1-cursor" aria-hidden="true">
+                    <svg data-hf-id="hf-s1cursvg" viewBox="0 0 20 20">
+                      <path data-hf-id="hf-s1curp" d="M0.6 0.6 L0.6 14.6 L4.4 11.3 L6.7 16.8 L9.4 15.6 L7.1 10.2 L12.4 9.8 Z" fill="#f8fafc" stroke="#0f172a" stroke-width="1.1" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div data-hf-id="hf-s1line" id="scene1-line">Some forms don't take paste.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SCENE 2 — The solution (5s - 10s) — press-ripple mounted full-frame -->
+      <!-- Scene duration matches press-ripple's fixed internal clip length   -->
+      <!-- (3s) plus room for the shortcut-chip + name-card overlay beats.    -->
+      <!-- ============================================================ -->
+      <section data-hf-id="hf-s2" id="scene-2" class="clip" data-start="5" data-duration="5" data-track-index="2">
+        <div data-hf-id="hf-s2bg" class="scene-bg"></div>
+        <div data-hf-id="hf-s2tb" id="scene2-toolbar">
+          <span data-hf-id="hf-s2td1" class="s2-tb-dot"></span>
+          <span data-hf-id="hf-s2td2" class="s2-tb-dot"></span>
+          <span data-hf-id="hf-s2td3" class="s2-tb-dot"></span>
+          <div data-hf-id="hf-s2addr" class="s2-tb-addr"></div>
+          <div data-hf-id="hf-s2well" id="scene2-icon-well">
+            <div data-hf-id="hf-s2ring" id="scene2-icon-ring"></div>
+            <img data-hf-id="hf-s2icon" src="assets/icon-128.png" alt="">
+          </div>
+        </div>
+        <div data-hf-id="hf-s2overlay" id="scene2-overlay">
+          <div data-hf-id="hf-s2namecard" id="scene2-name-card">
+            <img data-hf-id="hf-s2nameicon" src="assets/icon-128.png" alt="">
+            <span data-hf-id="hf-s2nametext" id="scene2-name-text">Smart Paste Typing</span>
+          </div>
+          <div data-hf-id="hf-s2shortcuts" class="s2-shortcut-row">
+            <div data-hf-id="hf-s2chipwin" class="s2-chip">Ctrl + Shift + V</div>
+            <div data-hf-id="hf-s2chipmac" class="s2-chip">Cmd + Shift + V</div>
+          </div>
+          <div data-hf-id="hf-s2plat" class="s2-plat-label">Windows · macOS</div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SCENE 3 — Magic typing (10s - 17s) — hand-authored centerpiece -->
+      <!-- ============================================================ -->
+      <section data-hf-id="hf-s3" id="scene-3" class="clip" data-start="10" data-duration="7" data-track-index="2">
+        <div data-hf-id="hf-s3bg" class="scene-bg"></div>
+        <div data-hf-id="hf-s3in" class="scene-inner">
+          <div data-hf-id="hf-s3stack" style="display:flex;flex-direction:column;align-items:center;">
+            <div data-hf-id="hf-s3card" id="scene3-card" class="mockwin">
+              <div data-hf-id="hf-s3tb" class="win-titlebar">
+                <span data-hf-id="hf-s3d1" class="win-dot red"></span>
+                <span data-hf-id="hf-s3d2" class="win-dot yellow"></span>
+                <span data-hf-id="hf-s3d3" class="win-dot green"></span>
+                <span data-hf-id="hf-s3lbl" class="win-label">account-portal.app</span>
+              </div>
+              <div data-hf-id="hf-s3body" class="s3-body">
+                <span data-hf-id="hf-s3fl" class="s3-field-label">Password</span>
+                <div data-hf-id="hf-s3field" id="scene3-field">
+                  <span data-hf-id="hf-s3typed" id="scene3-typed"></span><span data-hf-id="hf-s3caret" id="scene3-caret"></span>
+                </div>
+              </div>
+            </div>
+            <div data-hf-id="hf-s3lbl2" id="scene3-label">Types like a human.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SCENE 4 — Speed + privacy (17s - 22s) — grid-card-assemble     -->
+      <!-- Duration = 5s to match the montage's four-tag cascade + hold.  -->
+      <!-- ============================================================ -->
+      <section data-hf-id="hf-s4" id="scene-4" class="clip" data-start="17" data-duration="5" data-track-index="2"></section>
+
+      <!-- ============================================================ -->
+      <!-- SCENE 5 — Final product shot (22s - 25s) — logo-brand-close    -->
+      <!-- Duration = 3s: shorter than the component's default 4s IN, so  -->
+      <!-- its own elastic compression handles the tighter window.        -->
+      <!-- ============================================================ -->
+      <section data-hf-id="hf-s5" id="scene-5" class="clip" data-start="22" data-duration="3" data-track-index="2"></section>
+
+      <!-- ============================================================ -->
+      <!-- SUB-COMPOSITION MOUNTS — root-level siblings, global data-start -->
+      <!-- ============================================================ -->
+      <div data-hf-id="hf-s2ripple" id="scene2-ripple" data-composition-id="press-ripple" data-composition-src="compositions/components/press-ripple.html" data-variable-values="{&quot;label&quot;:&quot;Trigger&quot;,&quot;accent&quot;:&quot;blue&quot;,&quot;exit&quot;:&quot;none&quot;,&quot;press_at&quot;:1.3,&quot;target_x&quot;:50,&quot;target_y&quot;:82,&quot;cursor&quot;:&quot;light&quot;}" data-start="5" data-duration="3" data-track-index="3" data-width="1920" data-height="1080" style="z-index: 3"></div>
+
+      <div data-hf-id="hf-s4grid" id="scene4-grid" data-composition-id="grid-card-assemble" data-composition-src="compositions/components/grid-card-assemble.html" data-variable-values="{&quot;items&quot;:&quot;Works with editable fields,Character-by-character typing,Processed locally,No data uploaded&quot;,&quot;layout&quot;:&quot;grid&quot;,&quot;columns&quot;:2,&quot;accent&quot;:&quot;blue&quot;,&quot;exit&quot;:&quot;none&quot;}" data-start="17" data-duration="5" data-track-index="1" data-width="1920" data-height="1080" style="z-index: 1"></div>
+
+      <div data-hf-id="hf-s5logo" id="scene5-logo" data-composition-id="logo-brand-close" data-composition-src="compositions/components/logo-brand-close.html" data-variable-values="{&quot;wordmark&quot;:&quot;Paste anything. Type it naturally.&quot;,&quot;tagline&quot;:&quot;Smart Paste Typing — Chrome extension&quot;,&quot;url&quot;:&quot;Try Smart Paste Typing&quot;,&quot;accent&quot;:&quot;blue&quot;,&quot;exit&quot;:&quot;none&quot;}" data-start="22" data-duration="3" data-track-index="1" data-width="1920" data-height="1080" style="z-index: 1; --accent: #a78bfa;"></div>
+
+      <!-- ============================================================ -->
+      <!-- AUDIO                                                          -->
+      <!-- ============================================================ -->
+      <audio data-hf-id="hf-music" id="music-bed" src="assets/music/happy-beats-business-moves-vol-1-by-ende-dot-app.mp3" data-start="0" data-duration="25" data-track-index="20"></audio>
+
+      <audio data-hf-id="hf-sfxblocked" id="sfx-blocked" src="assets/sfx/interface/error_006.ogg" data-start="1.6" data-duration="0.5" data-track-index="21" data-volume="0.5"></audio>
+
+      <audio data-hf-id="hf-sfxtrigger" id="sfx-trigger" src="assets/sfx/interface/select_008.ogg" data-start="6.3" data-duration="0.3" data-track-index="21" data-volume="0.55"></audio>
+
+      <audio data-hf-id="hf-sfxkey1" id="sfx-key-1" src="assets/sfx/keyboard/keypress-001.wav" data-start="11.0" data-duration="0.25" data-track-index="22" data-volume="0.16"></audio>
+      <audio data-hf-id="hf-sfxkey2" id="sfx-key-2" src="assets/sfx/keyboard/keypress-004.wav" data-start="11.45" data-duration="0.25" data-track-index="22" data-volume="0.14"></audio>
+      <audio data-hf-id="hf-sfxkey3" id="sfx-key-3" src="assets/sfx/keyboard/keypress-007.wav" data-start="11.9" data-duration="0.25" data-track-index="22" data-volume="0.16"></audio>
+      <audio data-hf-id="hf-sfxkey4" id="sfx-key-4" src="assets/sfx/keyboard/keypress-010.wav" data-start="12.35" data-duration="0.25" data-track-index="22" data-volume="0.14"></audio>
+      <audio data-hf-id="hf-sfxkey5" id="sfx-key-5" src="assets/sfx/keyboard/keypress-013.wav" data-start="12.8" data-duration="0.25" data-track-index="22" data-volume="0.16"></audio>
+      <audio data-hf-id="hf-sfxkey6" id="sfx-key-6" src="assets/sfx/keyboard/keypress-001.wav" data-start="13.25" data-duration="0.25" data-track-index="22" data-volume="0.14"></audio>
+      <audio data-hf-id="hf-sfxkey7" id="sfx-key-7" src="assets/sfx/keyboard/keypress-004.wav" data-start="13.7" data-duration="0.25" data-track-index="22" data-volume="0.16"></audio>
+      <audio data-hf-id="hf-sfxkey8" id="sfx-key-8" src="assets/sfx/keyboard/keypress-007.wav" data-start="14.15" data-duration="0.25" data-track-index="22" data-volume="0.14"></audio>
+
+      <audio data-hf-id="hf-sfxsuccess" id="sfx-success" src="assets/sfx/impact/impactBell_heavy_003.ogg" data-start="15.55" data-duration="0.65" data-track-index="21" data-volume="0.5"></audio>
+
+      <audio data-hf-id="hf-sfxtag1" id="sfx-tag-1" src="assets/sfx/interface/drop_001.ogg" data-start="17.55" data-duration="0.15" data-track-index="23" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-sfxtag2" id="sfx-tag-2" src="assets/sfx/interface/drop_002.ogg" data-start="18.15" data-duration="0.2" data-track-index="23" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-sfxtag3" id="sfx-tag-3" src="assets/sfx/interface/drop_003.ogg" data-start="18.75" data-duration="0.2" data-track-index="23" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-sfxtag4" id="sfx-tag-4" src="assets/sfx/interface/drop_001.ogg" data-start="19.35" data-duration="0.2" data-track-index="23" data-volume="0.4"></audio>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var tl = gsap.timeline({ paused: true });
+
+        /* ===================================================== */
+        /* SCENE 1 — The problem (global 0s - 5s)                  */
+        /* ===================================================== */
+        var S1 = 0;
+        var field = document.getElementById("scene1-field");
+        var cursor = document.getElementById("scene1-cursor");
+        var blockedTag = document.getElementById("scene1-blocked-tag");
+        var mockwin1 = document.getElementById("scene1-mockwin");
+        var line1 = document.getElementById("scene1-line");
+
+        gsap.set(cursor, { x: 520, y: -40, opacity: 0 });
+        gsap.set(blockedTag, { x: -10, opacity: 0 });
+        gsap.set(mockwin1, { x: 0, y: 0 });
+        gsap.set(line1, { opacity: 0, y: 10 });
+
+        // Copy gesture: cursor drags in toward the field.
+        tl.fromTo(
+          cursor,
+          { x: 620, y: 40, opacity: 0 },
+          { x: 420, y: 4, opacity: 1, duration: 0.55, ease: "power2.out" },
+          S1 + 0.4,
+        );
+
+        // Paste keypress attempted -> blocked: brief shake + tag reveal.
+        tl.to(mockwin1, { x: -8, duration: 0.055, ease: "power1.inOut" }, S1 + 1.35);
+        tl.to(mockwin1, { x: 8, duration: 0.055, ease: "power1.inOut" }, S1 + 1.415);
+        tl.to(mockwin1, { x: -6, duration: 0.055, ease: "power1.inOut" }, S1 + 1.48);
+        tl.to(mockwin1, { x: 4, duration: 0.055, ease: "power1.inOut" }, S1 + 1.545);
+        tl.to(mockwin1, { x: 0, duration: 0.08, ease: "power2.out" }, S1 + 1.61);
+        tl.set(field, { className: "blocked" }, S1 + 1.35);
+
+        tl.fromTo(
+          blockedTag,
+          { opacity: 0, x: -10 },
+          { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" },
+          S1 + 1.4,
+        );
+
+        // Cursor retreats off-stage after the block registers.
+        tl.fromTo(
+          cursor,
+          { x: 420, y: 4, opacity: 1 },
+          { x: 560, y: -50, opacity: 0, duration: 0.4, ease: "power2.in", immediateRender: false },
+          S1 + 2.15,
+        );
+
+        // Problem line fades in below.
+        tl.fromTo(
+          line1,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          S1 + 2.75,
+        );
+
+        /* ===================================================== */
+        /* SCENE 2 — The solution (global 5s - 10s)                 */
+        /* Camera "moves toward" the toolbar via the toolbar's own  */
+        /* scale/opacity settle; icon ring pulses on activation;    */
+        /* shortcut chips + name-card overlay confirm the trigger.  */
+        /* press-ripple mounts a cursor press onto the icon well     */
+        /* (press_at 1.3 -> global 6.3s).                            */
+        /* ===================================================== */
+        var S2 = 5;
+        var toolbar = document.getElementById("scene2-toolbar");
+        var iconRing = document.getElementById("scene2-icon-ring");
+        var overlay = document.getElementById("scene2-overlay");
+        var nameCard = document.getElementById("scene2-name-card");
+        var shortcutRow = document.querySelector(".s2-shortcut-row");
+        var platLabel = document.querySelector(".s2-plat-label");
+
+        gsap.set(toolbar, { opacity: 0, scale: 0.94, transformOrigin: "50% 0%" });
+        gsap.set(iconRing, { opacity: 0, scale: 0.7 });
+        gsap.set(overlay, { opacity: 0, y: 16 });
+        gsap.set(nameCard, { opacity: 0, y: 10 });
+        gsap.set(shortcutRow, { opacity: 0, y: 10 });
+        gsap.set(platLabel, { opacity: 0 });
+
+        // Camera "arrives" at the toolbar.
+        tl.fromTo(
+          toolbar,
+          { opacity: 0, scale: 0.94 },
+          { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" },
+          S2 + 0.1,
+        );
+
+        // Icon highlight ring pulses right as the press lands (S2 + 1.3).
+        tl.fromTo(
+          iconRing,
+          { opacity: 0, scale: 0.7 },
+          { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2.4)" },
+          S2 + 1.3,
+        );
+        tl.to(iconRing, { opacity: 0, duration: 0.4, ease: "power1.in" }, S2 + 1.9);
+
+        // Overlay confirms: name card first, then shortcut chips, then platform label.
+        tl.fromTo(
+          overlay,
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+          S2 + 1.75,
+        );
+        tl.fromTo(
+          nameCard,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+          S2 + 1.8,
+        );
+        tl.fromTo(
+          shortcutRow,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+          S2 + 2.25,
+        );
+        tl.fromTo(
+          platLabel,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.35, ease: "power2.out" },
+          S2 + 2.65,
+        );
+
+        /* ===================================================== */
+        /* SCENE 3 — Magic typing (global 10s - 17s) — centerpiece  */
+        /* Deterministic chars-at-time table (typed-prompt law):    */
+        /* built synchronously before the timeline registers.       */
+        /* ===================================================== */
+        var S3 = 10;
+        var card3 = document.getElementById("scene3-card");
+        var typedEl = document.getElementById("scene3-typed");
+        var caretEl = document.getElementById("scene3-caret");
+        var label3 = document.getElementById("scene3-label");
+
+        var DEMO_TEXT = "correct-horse-battery-42";
+        var TOTAL = DEMO_TEXT.length;
+
+        // Fixed-seed LCG for human-feeling per-character delays (deterministic).
+        var lcgState = 0x51ed270b;
+        function rnd() {
+          lcgState = (Math.imul(1664525, lcgState) + 1013904223) >>> 0;
+          return lcgState / 4294967296;
+        }
+
+        var CARD_IN = 0.5;
+        var TYPE_START = 0.7;
+        var CHAR_MIN = 0.075;
+        var CHAR_MAX = 0.135;
+
+        var rows = [{ t: 0, n: 0 }];
+        (function buildRows() {
+          var t = TYPE_START;
+          for (var i = 1; i <= TOTAL; i += 1) {
+            t += CHAR_MIN + rnd() * (CHAR_MAX - CHAR_MIN);
+            rows.push({ t: t, n: i });
+          }
+        })();
+        var typeEnd = rows[rows.length - 1].t;
+        function charsAt(time) {
+          for (var i = rows.length - 1; i >= 0; i -= 1) {
+            if (time >= rows[i].t - 0.001) return rows[i].n;
+          }
+          return 0;
+        }
+        function showChars(n) {
+          typedEl.textContent = DEMO_TEXT.slice(0, n);
+        }
+
+        gsap.set(card3, { opacity: 0, y: 24 });
+        showChars(0);
+
+        tl.to(card3, { opacity: 1, y: 0, duration: CARD_IN, ease: "power3.out" }, S3);
+
+        var typeDriver = { t: 0 };
+        tl.to(
+          typeDriver,
+          {
+            t: typeEnd,
+            duration: typeEnd,
+            ease: "none",
+            onUpdate: function () {
+              showChars(charsAt(typeDriver.t));
+            },
+          },
+          S3,
+        );
+
+        var caretCycles = Math.max(1, Math.round(typeEnd / 0.5));
+        var caretDriver = { p: 0 };
+        tl.to(
+          caretDriver,
+          {
+            p: Math.PI * 2 * caretCycles,
+            duration: typeEnd,
+            ease: "none",
+            onUpdate: function () {
+              caretEl.style.opacity = Math.sin(caretDriver.p) >= 0 ? "1" : "0";
+            },
+          },
+          S3 + TYPE_START,
+        );
+        tl.set(caretEl, { opacity: 1 }, S3 + TYPE_START);
+
+        // "Types like a human." label settles once typing is well underway,
+        // holds through completion.
+        tl.fromTo(
+          label3,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          S3 + TYPE_START + typeEnd * 0.4,
+        );
+
+        // Completion: caret settles solid, field holds filled.
+        var doneAt = S3 + typeEnd + 0.2;
+        tl.set(caretEl, { opacity: 1 }, doneAt);
+
+        /* ===================================================== */
+        /* Music bed: fade in ~1s at start, fade out ~1.5s under    */
+        /* the outro so the final headline lands in near-silence.   */
+        /* ===================================================== */
+        var musicBed = document.getElementById("music-bed");
+        var BASE_VOLUME = 0.2;
+        gsap.set(musicBed, { volume: 0 });
+        tl.to(musicBed, { volume: BASE_VOLUME, duration: 1.0, ease: "sine.out" }, 0);
+        tl.to(musicBed, { volume: 0, duration: 1.5, ease: "sine.in" }, 23.2);
+
+        tl.seek(0);
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

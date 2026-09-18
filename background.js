@@ -1,8 +1,48 @@
 const MENU_ID = "paste-as-typing";
 const MENU_TITLE = "Paste as Typing";
 
+const DEFAULT_SETTINGS = {
+  minDelay: 20,
+  maxDelay: 80,
+  badgeEnabled: true,
+  stopEnabled: true
+};
+
 chrome.runtime.onInstalled.addListener(() => {
   createContextMenu();
+});
+
+function getSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(DEFAULT_SETTINGS, resolve);
+  });
+}
+
+function setBadge(tabId, text, color) {
+  if (typeof tabId !== "number") {
+    return;
+  }
+  chrome.action.setBadgeText({ tabId, text: text || "" });
+  if (text && color) {
+    chrome.action.setBadgeBackgroundColor({ tabId, color });
+  }
+}
+
+// Progress/completion messages from the injected page script, keyed by tab.
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (!message || message.source !== "smart-paste-typing") {
+    return;
+  }
+  const tabId = sender?.tab?.id;
+  if (typeof tabId !== "number") {
+    return;
+  }
+
+  if (message.type === "progress") {
+    setBadge(tabId, String(message.current), "#2563eb");
+  } else if (message.type === "done" || message.type === "stopped" || message.type === "error") {
+    setBadge(tabId, "");
+  }
 });
 
 function createContextMenu() {
@@ -38,6 +78,8 @@ async function triggerPasteAsTyping(tabId, frameId = null, targetElementId = nul
     console.warn("[Smart Paste Typing] Background clipboard read failed:", error);
   }
 
+  const settings = await getSettings();
+
   const target = { tabId };
   if (typeof frameId === "number" && frameId >= 0) {
     target.frameIds = [frameId];
@@ -46,11 +88,12 @@ async function triggerPasteAsTyping(tabId, frameId = null, targetElementId = nul
   try {
     await chrome.scripting.executeScript({
       target,
-      args: [clipboardText, targetElementId],
+      args: [clipboardText, targetElementId, settings],
       func: typeClipboardTextAsHuman
     });
   } catch (error) {
     console.warn("[Smart Paste Typing] Script injection failed:", error);
+    setBadge(tabId, "");
   }
 }
 
@@ -83,13 +126,39 @@ chrome.action.onClicked.addListener(async (tab) => {
   await triggerPasteAsTyping(tab.id);
 });
 
-async function typeClipboardTextAsHuman(clipboardTextFromBackground, targetElementId) {
-  const MIN_DELAY_MS = 20;
-  const MAX_DELAY_MS = 80;
+async function typeClipboardTextAsHuman(clipboardTextFromBackground, targetElementId, settings) {
+  const resolvedSettings = settings || {};
+  const MIN_DELAY_MS = Number.isFinite(resolvedSettings.minDelay) ? resolvedSettings.minDelay : 20;
+  const MAX_DELAY_MS = Number.isFinite(resolvedSettings.maxDelay) ? resolvedSettings.maxDelay : 80;
+  const BADGE_ENABLED = resolvedSettings.badgeEnabled !== false;
+  const STOP_ENABLED = resolvedSettings.stopEnabled !== false;
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const randomDelay = () =>
     Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1)) + MIN_DELAY_MS;
+
+  const reportToBackground = (message) => {
+    try {
+      chrome.runtime.sendMessage({ source: "smart-paste-typing", ...message });
+    } catch (error) {
+      // Extension context may be gone (e.g. reload mid-type); ignore silently.
+    }
+  };
+
+  // Stop mid-run: every trigger bumps a shared run id on window. The active
+  // typing loop checks it before each character and aborts cleanly if a
+  // newer run has started (i.e. the user re-triggered to cancel/replace).
+  window.__smartPasteRunId = (window.__smartPasteRunId || 0) + 1;
+  const runId = window.__smartPasteRunId;
+  const isCurrentRun = () => window.__smartPasteRunId === runId;
+
+  if (STOP_ENABLED && runId > 1 && window.__smartPasteRunActive) {
+    // A run was already in flight; this trigger's job is only to cancel it.
+    window.__smartPasteRunActive = false;
+    reportToBackground({ type: "stopped" });
+    return;
+  }
+  window.__smartPasteRunActive = true;
 
   const isTextControl = (el) =>
     el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
@@ -338,8 +407,15 @@ async function typeClipboardTextAsHuman(clipboardTextFromBackground, targetEleme
     // Use native setter so React/Vue/Angular controlled fields detect updates.
     const nativeSetter = getNativeValueSetter(el);
     const initialValue = el.value;
+    let typedCount = 0;
+    let stopped = false;
 
     for (const char of text) {
+      if (STOP_ENABLED && !isCurrentRun()) {
+        stopped = true;
+        break;
+      }
+
       if (el.disabled || el.readOnly) {
         console.warn("[Smart Paste Typing] Target became readonly/disabled. Stopping.");
         break;
@@ -379,7 +455,17 @@ async function typeClipboardTextAsHuman(clipboardTextFromBackground, targetEleme
 
       dispatchKeyEvent(el, "keyup", char);
 
+      typedCount += 1;
+      if (BADGE_ENABLED) {
+        reportToBackground({ type: "progress", current: typedCount, total: text.length });
+      }
+
       await sleep(randomDelay());
+    }
+
+    if (stopped) {
+      dispatchChangeEvent(el);
+      return;
     }
 
     // Final fallback for sites that ignore synthetic per-character events.
@@ -440,7 +526,15 @@ async function typeClipboardTextAsHuman(clipboardTextFromBackground, targetEleme
   };
 
   const typeIntoContentEditable = async (el, text) => {
+    let typedCount = 0;
+    let stopped = false;
+
     for (const char of text) {
+      if (STOP_ENABLED && !isCurrentRun()) {
+        stopped = true;
+        break;
+      }
+
       dispatchKeyEvent(el, "keydown", char);
       dispatchBeforeInputEvent(el, char);
       let inserted = false;
@@ -455,54 +549,73 @@ async function typeClipboardTextAsHuman(clipboardTextFromBackground, targetEleme
       }
       dispatchKeyEvent(el, "keyup", char);
 
+      typedCount += 1;
+      if (BADGE_ENABLED) {
+        reportToBackground({ type: "progress", current: typedCount, total: text.length });
+      }
+
       await sleep(randomDelay());
     }
 
     dispatchChangeEvent(el);
-    dispatchClickEvent(el);
+    if (!stopped) {
+      dispatchClickEvent(el);
+    }
   };
 
-  const clipboardTextRaw =
-    typeof clipboardTextFromBackground === "string"
-      ? clipboardTextFromBackground
-      : await navigator.clipboard.readText().catch(() => "");
-  const clipboardText = clipboardTextRaw.replace(/\r\n/g, "\n");
+  try {
+    const clipboardTextRaw =
+      typeof clipboardTextFromBackground === "string"
+        ? clipboardTextFromBackground
+        : await navigator.clipboard.readText().catch(() => "");
+    const clipboardText = clipboardTextRaw.replace(/\r\n/g, "\n");
 
-  if (!clipboardText) {
-    console.info("[Smart Paste Typing] Clipboard is empty. Nothing to type.");
-    return;
+    if (!clipboardText) {
+      console.info("[Smart Paste Typing] Clipboard is empty. Nothing to type.");
+      return;
+    }
+
+    installInteractionTracker();
+    const target =
+      findClickedEditable() ||
+      findFocusedEditable() ||
+      findActivePseudoFocusedEditable() ||
+      findTrackedEditable() ||
+      findHoveredEditable();
+
+    if (!target) {
+      console.warn("[Smart Paste Typing] No focused editable element found.");
+      return;
+    }
+
+    if (!isEditableElement(target)) {
+      console.warn("[Smart Paste Typing] Focused element is not editable.");
+      return;
+    }
+
+    target.focus();
+
+    console.info(
+      `[Smart Paste Typing] Typing ${clipboardText.length} characters into`,
+      target
+    );
+
+    if (isTextControl(target)) {
+      await typeIntoTextControl(target, clipboardText);
+    } else if (target.isContentEditable) {
+      await typeIntoContentEditable(target, clipboardText);
+    }
+
+    if (isCurrentRun()) {
+      console.info("[Smart Paste Typing] Typing completed.");
+      reportToBackground({ type: "done" });
+    }
+  } catch (error) {
+    console.warn("[Smart Paste Typing] Typing failed:", error);
+    reportToBackground({ type: "error" });
+  } finally {
+    if (isCurrentRun()) {
+      window.__smartPasteRunActive = false;
+    }
   }
-
-  installInteractionTracker();
-  const target =
-    findClickedEditable() ||
-    findFocusedEditable() ||
-    findActivePseudoFocusedEditable() ||
-    findTrackedEditable() ||
-    findHoveredEditable();
-
-  if (!target) {
-    console.warn("[Smart Paste Typing] No focused editable element found.");
-    return;
-  }
-
-  if (!isEditableElement(target)) {
-    console.warn("[Smart Paste Typing] Focused element is not editable.");
-    return;
-  }
-
-  target.focus();
-
-  console.info(
-    `[Smart Paste Typing] Typing ${clipboardText.length} characters into`,
-    target
-  );
-
-  if (isTextControl(target)) {
-    await typeIntoTextControl(target, clipboardText);
-  } else if (target.isContentEditable) {
-    await typeIntoContentEditable(target, clipboardText);
-  }
-
-  console.info("[Smart Paste Typing] Typing completed.");
 }

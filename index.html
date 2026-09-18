@@ -356,6 +356,43 @@
   }
   .trust-logos svg { height: 20px; width: auto; }
 
+  /* ---------- DEMO VIDEO ---------- */
+  .video-shell {
+    position: relative;
+    border-radius: 18px;
+    border: 1px solid var(--surface-border);
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+  .video-shell video {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #000;
+  }
+  .video-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(155deg, rgba(56,189,248,0.35), rgba(37,99,235,0.08) 40%, transparent 70%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .video-caption {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
   /* ---------- SECTION SHELL ---------- */
   section { padding: 96px 0; }
   section.tight { padding: 72px 0; }
@@ -712,6 +749,7 @@
       Smart Paste Typing
     </a>
     <nav class="links">
+      <a href="#demo">Demo</a>
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#privacy">Privacy</a>
@@ -779,6 +817,26 @@
       </div>
     </div>
   </div>
+
+  <!-- DEMO VIDEO -->
+  <section id="demo" class="wrap tight">
+    <div class="section-head center reveal">
+      <h2 class="section-title">See it type</h2>
+      <p class="section-sub">Install, trigger, watch your clipboard fill the field one keystroke at a time.</p>
+    </div>
+    <div class="video-shell reveal" style="max-width: 860px; margin: 0 auto;">
+      <video
+        controls
+        preload="metadata"
+        poster="assets/video/smart-paste-typing-demo-poster.jpg"
+        width="1920"
+        height="1080"
+      >
+        <source src="assets/video/smart-paste-typing-demo.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="video-caption">0:20 &middot; no sound required</p>
+  </section>
 
   <!-- FEATURES / BENTO -->
   <section id="features" class="wrap">

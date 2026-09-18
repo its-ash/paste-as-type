@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-	<img alt="Version" src="https://img.shields.io/badge/version-1.1.0-0EA5E9?style=flat-square" />
+	<img alt="Version" src="https://img.shields.io/badge/version-2.1.0-0EA5E9?style=flat-square" />
 	<img alt="Manifest" src="https://img.shields.io/badge/manifest-v3-16A34A?style=flat-square" />
 	<img alt="Browser" src="https://img.shields.io/badge/browser-Chrome-FBBC05?style=flat-square" />
 </p>
@@ -25,12 +25,23 @@ Some websites ignore normal paste actions or depend on keyboard/input events to 
 
 ## Core Features
 
-- Types clipboard text one character at a time with randomized delay (`20-80ms`)
+- Types clipboard text one character at a time with a configurable randomized delay (`20-80ms` by default)
 - Emits realistic event sequence (`keydown` -> `beforeinput` -> `input` -> `keyup`)
 - Works with `input`, `textarea`, and `contenteditable` elements
 - Supports React/Vue/Angular style controlled inputs through native value setters
 - Automatically dispatches a final `change` event when typing completes
 - Includes safe fallbacks for empty clipboard, non-editable targets, and blocked insert paths
+- Adjustable typing speed (Slow / Normal / Fast presets or a custom range) via the options page
+- Live progress badge on the toolbar icon while typing (character count), optional
+- Re-trigger the shortcut, menu, or icon mid-type to stop it, optional
+
+## Settings
+
+Open the options page from `chrome://extensions` -> Smart Paste Typing -> **Details** -> **Extension options**, or right-click the toolbar icon -> **Options**.
+
+- **Typing speed** - pick a preset or drag the min/max delay sliders directly.
+- **Show progress badge** - toggles the live character-count badge on the toolbar icon.
+- **Allow stop mid-type** - toggles whether re-triggering while typing cancels the run instead of starting a new one.
 
 ## Trigger Options
 
@@ -75,6 +86,7 @@ https://chromewebstore.google.com/detail/smart-paste-typing/ochdhjlkcfnockclnacb
 
 - `manifest.json`
 - `background.js`
+- `options.html` / `options.js`
 - `icons/`
 
 ## Tech Stack

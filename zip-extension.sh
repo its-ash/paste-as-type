@@ -36,14 +36,22 @@ mkdir -p "${DIST_DIR}"
 ZIP_PATH="${DIST_DIR}/${PACKAGE_BASENAME}.zip"
 rm -f "${ZIP_PATH}"
 
+# Only ship the files the extension actually needs. Everything else in the
+# repo root (marketing page, skills, agent output, store assets, dotfiles)
+# must never end up inside the Chrome Web Store package.
+PACKAGE_FILES=(
+  "manifest.json"
+  "background.js"
+  "options.html"
+  "options.js"
+  "icons"
+)
+
 (
   cd "${ROOT_DIR}"
-  zip -r "${ZIP_PATH}" . \
-    -x "dist/*" \
-    -x ".git/*" \
+  zip -r "${ZIP_PATH}" "${PACKAGE_FILES[@]}" \
     -x ".DS_Store" \
-    -x "*/.DS_Store" \
-    -x "*.zip"
+    -x "*/.DS_Store"
 )
 
 echo "Extension package created:"
