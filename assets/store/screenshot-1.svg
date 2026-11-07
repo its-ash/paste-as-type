@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800">
+  <rect width="1280" height="800" fill="#F5F7FA"/>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#1F2933">
+    <g text-anchor="middle">
+      <text x="640" y="88" font-size="46" font-weight="700">Type your clipboard text where paste is blocked</text>
+      <text x="640" y="136" font-size="24" fill="#52606D">Websites get typing events, one character at a time.</text>
+    </g>
+
+    <rect x="140" y="180" width="1000" height="580" rx="16" fill="#FFFFFF" stroke="#CBD2D9" stroke-width="2"/>
+    <path d="M140 240V196a16 16 0 0 1 16-16H1124a16 16 0 0 1 16 16V240Z" fill="#E4E7EB"/>
+    <g fill="#9AA5B1">
+      <circle cx="170" cy="210" r="7"/>
+      <circle cx="194" cy="210" r="7"/>
+      <circle cx="218" cy="210" r="7"/>
+    </g>
+    <rect x="250" y="194" width="720" height="32" rx="16" fill="#FFFFFF"/>
+    <text x="270" y="216" font-size="16" fill="#52606D">example.com/sign-up</text>
+    <g transform="translate(1040 194) scale(.25)" fill="#FFFFFF" stroke="#1F2933" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="22" y="22" width="84" height="98" rx="14"/>
+      <rect x="44" y="8" width="40" height="28" rx="8"/>
+      <path d="M44 64H84M44 90H68" fill="none"/>
+    </g>
+    <rect x="1056" y="212" width="28" height="18" rx="9" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="1070" y="226" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">11</text>
+
+    <text x="340" y="315" font-size="34" font-weight="700">Create your account</text>
+    <text x="340" y="372" font-size="20" fill="#52606D">Email</text>
+    <rect x="340" y="386" width="600" height="56" rx="10" fill="#FFFFFF" stroke="#CBD2D9" stroke-width="2"/>
+    <text x="358" y="422" font-size="22">hello@example.com</text>
+    <text x="340" y="488" font-size="20" fill="#52606D">Confirm email</text>
+    <rect x="340" y="502" width="600" height="56" rx="10" fill="#FFFFFF" stroke="#1F2933" stroke-width="3"/>
+    <text x="358" y="538" font-size="22">hello@examp<tspan font-weight="700">|</tspan></text>
+    <text x="340" y="590" font-size="18" fill="#52606D">Paste is not allowed in this field.</text>
+    <rect x="340" y="626" width="600" height="56" rx="10"/>
+    <text x="640" y="662" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="middle">Sign up</text>
+  </g>
+</svg>

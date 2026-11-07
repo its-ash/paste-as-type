@@ -1,47 +1,49 @@
 # Smart Paste Typing
 
 <p align="center">
-	<img src="icons/icon-128.png" alt="Smart Paste Typing logo" width="96" height="96" />
+	<img src="assets/logo.svg" alt="Smart Paste Typing logo" width="96" height="96" />
 </p>
 
 <p align="center">
 	Paste like a human. Not like a bot.<br/>
-	Smart Paste Typing inserts clipboard text character-by-character so websites receive real typing-style events.
+	Smart Paste Typing inserts clipboard text one character at a time, so websites receive real typing-style events.
 </p>
 
 <p align="center">
-	<a href="https://chromewebstore.google.com/detail/smart-paste-typing/ochdhjlkcfnockclnacbokdiepombjle"><img alt="Download from Chrome Web Store" src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-1A73E8?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
+	<a href="https://chromewebstore.google.com/detail/smart-paste-typing/ochdhjlkcfnockclnacbokdiepombjle"><img alt="Download from Chrome Web Store" src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-2F6DF6?style=for-the-badge"></a>
 </p>
 
 <p align="center">
-	<img alt="Version" src="https://img.shields.io/badge/version-2.1.0-0EA5E9?style=flat-square" />
-	<img alt="Manifest" src="https://img.shields.io/badge/manifest-v3-16A34A?style=flat-square" />
-	<img alt="Browser" src="https://img.shields.io/badge/browser-Chrome-FBBC05?style=flat-square" />
+	<img alt="Version" src="https://img.shields.io/badge/version-3.0.0-2F6DF6?style=flat-square" />
+	<img alt="Manifest" src="https://img.shields.io/badge/manifest-v3-12B76A?style=flat-square" />
+	<img alt="Browser" src="https://img.shields.io/badge/browser-Chrome%20123%2B-F4483B?style=flat-square" />
 </p>
+
+Website: https://paste.itsash.in
 
 ## Why Smart Paste Typing?
 
-Some websites ignore normal paste actions or depend on keyboard/input events to validate text. This extension simulates real typing flow to improve compatibility with modern web apps and controlled inputs.
+Some websites ignore normal paste actions or depend on keyboard and input events to validate text. This extension simulates a real typing flow to improve compatibility with modern web apps and controlled inputs.
 
 ## Core Features
 
-- Types clipboard text one character at a time with a configurable randomized delay (`20-80ms` by default)
-- Emits realistic event sequence (`keydown` -> `beforeinput` -> `input` -> `keyup`)
+- Types clipboard text one character at a time with a configurable random delay (`20-80ms` by default)
+- Sends a realistic event sequence (`keydown` -> `beforeinput` -> `input` -> `keyup`)
 - Works with `input`, `textarea`, and `contenteditable` elements
-- Supports React/Vue/Angular style controlled inputs through native value setters
-- Automatically dispatches a final `change` event when typing completes
-- Includes safe fallbacks for empty clipboard, non-editable targets, and blocked insert paths
-- Adjustable typing speed (Slow / Normal / Fast presets or a custom range) via the options page
+- Supports React, Vue, and Angular controlled inputs through native value setters
+- Sends a final `change` event when typing completes
+- Has safe fallbacks for an empty clipboard, non-editable targets, and blocked insert paths
 - Live progress badge on the toolbar icon while typing (character count), optional
-- Re-trigger the shortcut, menu, or icon mid-type to stop it, optional
+- Use the shortcut, menu, or icon again while typing to stop, optional
 
-## Settings
+## Extension page
 
-Open the options page from `chrome://extensions` -> Smart Paste Typing -> **Details** -> **Extension options**, or right-click the toolbar icon -> **Options**.
+The extension page opens once, after first install. To open it later, right-click the toolbar icon and select **Options**.
 
-- **Typing speed** - pick a preset or drag the min/max delay sliders directly.
-- **Show progress badge** - toggles the live character-count badge on the toolbar icon.
-- **Allow stop mid-type** - toggles whether re-triggering while typing cancels the run instead of starting a new one.
+- **Get started** - how to use the extension.
+- **Shortcut** - your current shortcut and a button that opens `chrome://extensions/shortcuts`.
+- **Practice** - a field where you can try the typing.
+- **Settings** - typing speed presets, minimum and maximum delay, progress badge, and stop mid-type.
 
 ## Trigger Options
 
@@ -58,16 +60,17 @@ https://chromewebstore.google.com/detail/smart-paste-typing/ochdhjlkcfnockclnacb
 
 ### Developer Mode (Local)
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked**
-4. Select this project folder
+1. Run `make build`
+2. Open `chrome://extensions`
+3. Enable **Developer mode**
+4. Click **Load unpacked**
+5. Select the `build/` folder
 
 ## How To Use
 
 1. Copy text to your clipboard
 2. Focus or right-click the target editable field
-3. Trigger Smart Paste Typing from shortcut, context menu, or toolbar button
+3. Start Smart Paste Typing from the shortcut, the context menu, or the toolbar button
 
 ## Shortcut Notes
 
@@ -77,24 +80,39 @@ https://chromewebstore.google.com/detail/smart-paste-typing/ochdhjlkcfnockclnacb
 
 ## Troubleshooting
 
-- Confirm clipboard contains text
-- Ensure cursor is in an editable field
-- If shortcut does not fire, set a custom key in `chrome://extensions/shortcuts`
-- Reload the extension after local code changes via `chrome://extensions`
+- Confirm the clipboard contains text
+- Ensure the cursor is in an editable field
+- If the shortcut does not fire, set a custom key in `chrome://extensions/shortcuts`
+- Run `make build` and reload the extension in `chrome://extensions` after local code changes
 
 ## Project Structure
 
-- `manifest.json`
-- `background.js`
-- `options.html` / `options.js`
-- `icons/`
+- `extension/` - the extension source. No dependencies and no bundler.
+  - `manifest.json` - the only place that holds the version of the extension
+  - `background.js` - service worker: triggers, context menu, badge, first-install page
+  - `typer.js` - the self-contained typing function that `chrome.scripting` injects
+  - `settings.js` - setting defaults, presets, and delay limits
+  - `options.html`, `options.css`, `options.js` - the extension page
+  - `_locales/en/messages.json` - all visible text
+  - `icons/` - generated PNG icons
+- `assets/` - logo source, social image, and demo video for the website
+- `index.html`, `CNAME` - the GitHub Pages landing page
+- `scripts/make-icons.sh` - regenerates all PNGs from `assets/logo.svg`, `assets/og.svg`, and the Chrome Web Store images in `assets/store/`
+
+## Commands
+
+- `make run` - serves the website at http://localhost:8080
+- `make build` - writes the unpacked extension to `build/` and the store zip to `dist/smart-paste-typing-<version>.zip`
+- `make deploy` - builds, commits, and pushes `main`
 
 ## Tech Stack
 
 - Chrome Extension Manifest V3
-- Service Worker background script
+- Module service worker
 - Script injection via `chrome.scripting.executeScript`
 
 ## License
 
 MIT
+
+Not affiliated with or endorsed by Google. Chrome is a trademark of Google LLC.

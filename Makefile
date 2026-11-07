@@ -1,10 +1,17 @@
+NAME := smart-paste-typing
+VERSION := $(shell node -p "require('./extension/manifest.json').version")
+
 .PHONY: run build deploy
 
 run:
 	python3 -m http.server 8080
 
 build:
-	@echo "Static project — nothing to build."
+	rm -rf build
+	cp -R extension build
+	mkdir -p dist
+	rm -f "dist/$(NAME)-$(VERSION).zip"
+	cd build && zip -qrX "../dist/$(NAME)-$(VERSION).zip" . -x '*.map' '*.DS_Store'
 
 deploy: build
 	git checkout main

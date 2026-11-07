@@ -1,20 +1,31 @@
-Smart Paste Typing mimics natural keystrokes to enter clipboard content into any text field. It’s the perfect solution for websites that restrict standard pasting or for workflows that require manual-entry simulation.
+Smart Paste Typing mimics natural keystrokes to enter clipboard content into any text field. Use it on websites that restrict standard pasting, or in workflows that need manual-entry simulation.
 
 Key Features
-Simulated Typing: Converts clipboard text into real keyboard events, bypassing "no-paste" restrictions on forms and login screens.
+Simulated Typing: Converts clipboard text into real keyboard events, for forms and login screens with "no-paste" restrictions.
 
-Instant Action: Click the extension icon to immediately begin typing into the focused input field.
+Instant Action: Click the extension icon to start typing into the focused input field at once.
 
-Quick Command Shortcut: Fire off a paste-as-typing command instantly with Cmd + Shift + V (Mac) or Ctrl + Shift + V (Windows).
+Quick Command Shortcut: Start paste-as-typing with Cmd + Shift + V (Mac) or Ctrl + Shift + V (Windows). You can change the shortcut.
 
-Smart Field Detection: Automatically identifies the active editable area or input box without requiring manual selection.
+Context Menu: Right-click an editable field and select Paste as Typing.
+
+Smart Field Detection: Automatically finds the active editable area or input box.
+
+Your Speed: Pick Slow, Normal, or Fast, or set your own minimum and maximum delay.
+
+Progress and Stop: A badge on the toolbar icon shows the character count. Trigger the extension again while it types to stop.
+
+New in 3.0
+A new logo, and a new extension page in light and dark mode with a quick guide, your current shortcut, a practice field, and all settings. Your current settings stay the same.
 
 How it Works
-The extension only activates when you trigger it. It injects a temporary script into the current page to find the active cursor and "type" your clipboard text character-by-character.
+The extension only activates when you trigger it. It injects a temporary script into the current page to find the active cursor and "type" your clipboard text character by character.
 
 Privacy & Security
 No External Servers: Your clipboard data is processed locally on your machine.
 
 Zero Data Retention: We do not upload, store, or share your clipboard or page content.
 
-On-Demand Execution: The extension only interacts with your browser when you explicitly click the icon or use the shortcut.
+On-Demand Execution: The extension only interacts with a page when you click the icon, use the shortcut, or select the menu item.
+
+Smart Paste Typing is an independent project. It is not affiliated with or endorsed by Google.

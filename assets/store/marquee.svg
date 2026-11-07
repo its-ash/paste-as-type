@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 560" width="1400" height="560">
+  <rect width="1400" height="560" fill="#1F2933"/>
+  <g transform="translate(100 96)" fill="#FFFFFF" stroke="#1F2933" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="22" y="22" width="84" height="98" rx="14"/>
+    <rect x="44" y="8" width="40" height="28" rx="8"/>
+    <path d="M44 64H84M44 90H68" fill="none"/>
+  </g>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <text x="100" y="320" font-size="72" font-weight="700" fill="#FFFFFF">Smart Paste Typing</text>
+    <text x="100" y="380" font-size="34" fill="#CBD2D9">Paste like a human, not like a bot.</text>
+    <rect x="840" y="140" width="460" height="280" rx="18" fill="#FFFFFF"/>
+    <text x="880" y="208" font-size="26" font-weight="700" fill="#1F2933">Confirm email</text>
+    <rect x="880" y="232" width="380" height="64" rx="10" fill="#FFFFFF" stroke="#1F2933" stroke-width="3"/>
+    <text x="900" y="273" font-size="26" fill="#1F2933">hello@examp<tspan font-weight="700">|</tspan></text>
+    <text x="880" y="350" font-size="22" fill="#52606D">Paste is not allowed here.</text>
+    <text x="880" y="384" font-size="22" font-weight="700" fill="#1F2933">Typed one key at a time.</text>
+  </g>
+</svg>

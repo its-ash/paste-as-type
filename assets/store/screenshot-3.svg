@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800">
+  <rect width="1280" height="800" fill="#F5F7FA"/>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#1F2933">
+    <g text-anchor="middle">
+      <text x="640" y="80" font-size="46" font-weight="700">Pick your typing speed</text>
+      <text x="640" y="126" font-size="24" fill="#52606D">A random delay between each key press.</text>
+    </g>
+
+    <rect x="190" y="160" width="900" height="560" rx="16" fill="#FFFFFF" stroke="#CBD2D9" stroke-width="2"/>
+    <path d="M190 272H1090M190 384H1090M190 496H1090M190 608H1090" stroke="#E4E7EB" stroke-width="2"/>
+
+    <text x="230" y="210" font-size="24">Typing speed</text>
+    <text x="230" y="240" font-size="18" fill="#52606D">Slow, Normal, or Fast</text>
+    <rect x="690" y="192" width="360" height="48" rx="24" fill="#FFFFFF" stroke="#CBD2D9" stroke-width="2"/>
+    <rect x="810" y="192" width="120" height="48" rx="24"/>
+    <g font-size="20" text-anchor="middle">
+      <text x="750" y="223">Slow</text>
+      <text x="870" y="223" font-weight="700" fill="#FFFFFF">Normal</text>
+      <text x="990" y="223">Fast</text>
+    </g>
+
+    <text x="230" y="336" font-size="24">Minimum delay</text>
+    <rect x="690" y="325" width="280" height="6" rx="3" fill="#CBD2D9"/>
+    <circle cx="701" cy="328" r="11"/>
+    <text x="1050" y="336" font-size="20" text-anchor="end">20 ms</text>
+
+    <text x="230" y="448" font-size="24">Maximum delay</text>
+    <rect x="690" y="437" width="280" height="6" rx="3" fill="#CBD2D9"/>
+    <circle cx="740" cy="440" r="11"/>
+    <text x="1050" y="448" font-size="20" text-anchor="end">80 ms</text>
+
+    <text x="230" y="546" font-size="24">Show progress badge</text>
+    <text x="230" y="576" font-size="18" fill="#52606D">Shows the live character count on the toolbar icon.</text>
+    <rect x="990" y="534" width="60" height="32" rx="16"/>
+    <circle cx="1034" cy="550" r="12" fill="#FFFFFF"/>
+
+    <text x="230" y="658" font-size="24">Allow stop mid-type</text>
+    <text x="230" y="688" font-size="18" fill="#52606D">Use the shortcut, menu, or icon again to stop.</text>
+    <rect x="990" y="646" width="60" height="32" rx="16"/>
+    <circle cx="1034" cy="662" r="12" fill="#FFFFFF"/>
+
+    <text x="640" y="764" font-size="22" fill="#52606D" text-anchor="middle">Your text stays on this device. The extension does not upload or store it.</text>
+  </g>
+</svg>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title></title>
+  <link rel="icon" href="icons/icon-32.png" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <img src="icons/icon-48.png" width="32" height="32" alt="" />
+    <h1 data-i18n="name"></h1>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" data-i18n-label="navLabel">
+      <a href="#start"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10 8.5 5 3.5-5 3.5v-7Z"/></svg><span data-i18n="navStart"></span></a>
+      <a href="#shortcut"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></svg><span data-i18n="navShortcut"></span></a>
+      <a href="#practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4ZM13 7l4 4"/></svg><span data-i18n="navPractice"></span></a>
+      <a href="#settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h8M18 7h2M4 17h2M12 17h8"/><circle cx="15" cy="7" r="3"/><circle cx="9" cy="17" r="3"/></svg><span data-i18n="navSettings"></span></a>
+    </nav>
+
+    <main>
+      <section id="start" aria-labelledby="start-title">
+        <h2 id="start-title" data-i18n="navStart"></h2>
+        <div class="card">
+          <p class="intro" data-i18n="startIntro"></p>
+          <ol class="steps">
+            <li class="row">
+              <span class="num" aria-hidden="true">1</span>
+              <div class="label"><span data-i18n="step1"></span><small data-i18n="step1Sub"></small></div>
+            </li>
+            <li class="row">
+              <span class="num" aria-hidden="true">2</span>
+              <div class="label"><span data-i18n="step2"></span><small data-i18n="step2Sub"></small></div>
+            </li>
+            <li class="row">
+              <span class="num" aria-hidden="true">3</span>
+              <div class="label"><span data-i18n="step3"></span><small data-i18n="step3Sub"></small></div>
+            </li>
+          </ol>
+          <div class="row">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5.05 3.41 9.76 8 11 4.59-1.24 8-5.95 8-11V5l-8-3Zm6 9c0 4.04-2.55 7.78-6 8.92-3.45-1.14-6-4.88-6-8.92V6.39l6-2.25 6 2.25V11Z"/></svg>
+            <div class="label"><span data-i18n="privacy"></span><small data-i18n="privacySub"></small></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="shortcut" aria-labelledby="shortcut-title">
+        <h2 id="shortcut-title" data-i18n="navShortcut"></h2>
+        <div class="card">
+          <div class="row">
+            <div class="label"><span data-i18n="shortcutRow"></span><small data-i18n="shortcutRowSub"></small></div>
+            <kbd id="shortcutKeys"></kbd>
+            <button id="shortcutChange" class="btn outlined" type="button" data-i18n="shortcutChange"></button>
+          </div>
+          <div class="row">
+            <div class="label"><span data-i18n="pinRow"></span><small data-i18n="pinRowSub"></small></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="practice" aria-labelledby="practice-title">
+        <h2 id="practice-title" data-i18n="navPractice"></h2>
+        <div class="card pad">
+          <label for="field" data-i18n="practiceLabel"></label>
+          <small id="fieldHint" data-i18n="practiceHint"></small>
+          <textarea id="field" rows="5" spellcheck="false" aria-describedby="fieldHint"></textarea>
+          <div class="field-meta">
+            <span id="practiceStatus" role="status"></span>
+            <span id="charCount"></span>
+          </div>
+          <div class="actions">
+            <button id="clear" class="btn outlined" type="button" data-i18n="clear"></button>
+            <button id="copySample" class="btn tonal" type="button" data-i18n="sampleCopy"></button>
+            <button id="typeRun" class="btn filled" type="button" data-i18n="typeStart"></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="settings" aria-labelledby="settings-title">
+        <h2 id="settings-title" data-i18n="navSettings"></h2>
+        <div class="card">
+          <div class="row">
+            <div class="label" id="speedLabel"><span data-i18n="speedRow"></span><small data-i18n="speedRowSub"></small></div>
+            <div class="segments" role="group" aria-labelledby="speedLabel">
+              <button type="button" data-preset="slow" data-i18n="speedSlow"></button>
+              <button type="button" data-preset="normal" data-i18n="speedNormal"></button>
+              <button type="button" data-preset="fast" data-i18n="speedFast"></button>
+            </div>
+          </div>
+          <div class="row">
+            <label class="label" for="minDelay" data-i18n="minRow"></label>
+            <input id="minDelay" type="range" min="5" max="300" step="5" />
+            <output id="minDelayValue" for="minDelay"></output>
+          </div>
+          <div class="row">
+            <label class="label" for="maxDelay" data-i18n="maxRow"></label>
+            <input id="maxDelay" type="range" min="10" max="400" step="5" />
+            <output id="maxDelayValue" for="maxDelay"></output>
+          </div>
+          <div class="row">
+            <label class="label" for="badgeEnabled"><span data-i18n="badgeRow"></span><small data-i18n="badgeRowSub"></small></label>
+            <input id="badgeEnabled" class="switch" type="checkbox" role="switch" />
+          </div>
+          <div class="row">
+            <label class="label" for="stopEnabled"><span data-i18n="stopRow"></span><small data-i18n="stopRowSub"></small></label>
+            <input id="stopEnabled" class="switch" type="checkbox" role="switch" />
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span id="version"></span>
+        <a href="https://paste.itsash.in" target="_blank" rel="noopener" data-i18n="footerWebsite"></a>
+      </footer>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
